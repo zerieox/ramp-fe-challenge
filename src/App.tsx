@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
+import { Fragment, useCallback, useEffect, useMemo, useState, createContext, useContext } from "react"
 import { InputSelect } from "./components/InputSelect"
 import { Instructions } from "./components/Instructions"
 import { Transactions } from "./components/Transactions"
@@ -7,6 +7,25 @@ import { usePaginatedTransactions } from "./hooks/usePaginatedTransactions"
 import { useTransactionsByEmployee } from "./hooks/useTransactionsByEmployee"
 import { EMPTY_EMPLOYEE } from "./utils/constants"
 import { Employee } from "./utils/types"
+
+const TransactionApprovalContext = createContext()
+export const TransactionApprovalProvider = ({ children }) => {
+  const [approvalState, setApprovalState] = useState({})
+
+  const updateApprovalState = (transactionId, newValue) => {
+    setApprovalState((prevState) => ({
+      ...prevState,
+      [transactionId]: newValue,
+    }))
+  }
+
+  return (
+    <TransactionApprovalContext.Provider value={{ approvalState, updateApprovalState }}>
+      {children}
+    </TransactionApprovalContext.Provider>
+  )
+}
+export const useTransactionApproval = () => useContext(TransactionApprovalContext)
 
 export function App() {
   const { data: employees, ...employeeUtils } = useEmployees()
@@ -37,13 +56,6 @@ export function App() {
     },
     [paginatedTransactionsUtils, transactionsByEmployeeUtils]
   )
-  const updateTransactionApproval = (transactionId, newValue) => {
-    setAllTransactions((currentTransactions) =>
-      currentTransactions.map((transaction) =>
-        transaction.id === transactionId ? { ...transaction, approved: newValue } : transaction
-      )
-    )
-  }
 
   useEffect(() => {
     if (employees === null && !employeeUtils.loading) {
@@ -57,7 +69,6 @@ export function App() {
     } else if (paginatedTransactions?.data?.length > 0) {
       setAllTransactions(paginatedTransactions.data)
     }
-    console.log(`[App] Transactions updated`, paginatedTransactions)
   }, [paginatedTransactions])
   useEffect(() => {
     //BUG 5
@@ -67,55 +78,58 @@ export function App() {
   }, [employees])
 
   return (
-    <Fragment>
-      <main className="MainContainer">
-        <Instructions />
+    <TransactionApprovalProvider>
+      <Fragment>
+        <main className="MainContainer">
+          <Instructions />
 
-        <hr className="RampBreak--l" />
+          <hr className="RampBreak--l" />
 
-        <InputSelect<Employee>
-          isLoading={!employeesLoaded && employeeUtils.loading} //BUG 5
-          defaultValue={EMPTY_EMPLOYEE}
-          items={employees === null ? [] : [EMPTY_EMPLOYEE, ...employees]}
-          label="Filter by employee"
-          loadingLabel="Loading employees"
-          parseItem={(item) => ({
-            value: item.id,
-            label: `${item.firstName} ${item.lastName}`,
-          })}
-          onChange={async (newValue) => {
-            console.log(`[App] Filter by employee changed, new value: `, newValue)
+          <InputSelect<Employee>
+            isLoading={!employeesLoaded && employeeUtils.loading} //BUG 5
+            defaultValue={EMPTY_EMPLOYEE}
+            items={employees === null ? [] : [EMPTY_EMPLOYEE, ...employees]}
+            label="Filter by employee"
+            loadingLabel="Loading employees"
+            parseItem={(item) => ({
+              value: item.id,
+              label: `${item.firstName} ${item.lastName}`,
+            })}
+            onChange={async (newValue) => {
+              console.log(`[App] Filter by employee changed, new value: `, newValue)
 
-            setAllTransactions([]) //BUG4
-            //BUG3
-            if (newValue === null || newValue.id === EMPTY_EMPLOYEE.id) {
-              setIsFilterByEmployee(false)
-              await loadAllTransactions()
-            } else {
-              setIsFilterByEmployee(true)
-              await loadTransactionsByEmployee(newValue.id)
-            }
-          }}
-        />
-
-        <div className="RampBreak--l" />
-
-        <div className="RampGrid">
-          <Transactions transactions={transactions} />
-          <p>this</p>
-          {transactions !== null && !isFilterByEmployee && paginatedTransactions?.nextPage !== null && (
-            <button
-              className="RampButton"
-              disabled={paginatedTransactionsUtils.loading}
-              onClick={async () => {
+              setAllTransactions([]) //BUG4
+              //BUG3
+              if (newValue === null || newValue.id === EMPTY_EMPLOYEE.id) {
+                setIsFilterByEmployee(false)
                 await loadAllTransactions()
-              }}
-            >
-              View More
-            </button>
-          )}
-        </div>
-      </main>
-    </Fragment>
+              } else {
+                setIsFilterByEmployee(true)
+                await loadTransactionsByEmployee(newValue.id)
+              }
+            }}
+          />
+
+          <div className="RampBreak--l" />
+
+          <div className="RampGrid">
+            <Transactions transactions={transactions} />
+            {transactions !== null &&
+              !isFilterByEmployee &&
+              paginatedTransactions?.nextPage !== null && (
+                <button
+                  className="RampButton"
+                  disabled={paginatedTransactionsUtils.loading}
+                  onClick={async () => {
+                    await loadAllTransactions()
+                  }}
+                >
+                  View More
+                </button>
+              )}
+          </div>
+        </main>
+      </Fragment>
+    </TransactionApprovalProvider>
   )
 }

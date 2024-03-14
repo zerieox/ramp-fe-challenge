@@ -11,11 +11,10 @@ export const Transactions: TransactionsComponent = ({ transactions }) => {
       await fetchWithoutCache<void, SetTransactionApprovalParams>("setTransactionApproval", {
         transactionId,
         value: newValue,
-      }).then(() => {
-        console.log(
-          `[Transactions] Fetch without cache completed for transactionId: ${transactionId} with newValue: ${newValue}`
-        )
       })
+      console.log(
+        `[Transactions] Fetch without cache completed for transactionId: ${transactionId} with newValue: ${newValue}`
+      )
     },
     [fetchWithoutCache]
   )

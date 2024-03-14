@@ -1,13 +1,15 @@
 import { useState } from "react"
 import { InputCheckbox } from "../InputCheckbox"
 import { TransactionPaneComponent } from "./types"
-
+import { useTransactionApproval } from "../../App"
 export const TransactionPane: TransactionPaneComponent = ({
   transaction,
   loading,
   setTransactionApproval: consumerSetTransactionApproval,
 }) => {
-  const [approved, setApproved] = useState(transaction.approved)
+  const { updateApprovalState, approvalState } = useTransactionApproval()
+  const [approved, setApproved] = useState(approvalState[transaction.id] ?? transaction.approved)
+
   // console.log(transaction)
   return (
     <div className="RampPane">
@@ -28,7 +30,7 @@ export const TransactionPane: TransactionPaneComponent = ({
             newValue,
           })
           setApproved(newValue)
-          console.log(`[TransactionPane] setApproved called with: `, newValue)
+          updateApprovalState(transaction.id, newValue)
         }}
       />
     </div>
