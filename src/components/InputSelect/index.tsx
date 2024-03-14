@@ -49,7 +49,6 @@ export function InputSelect<TItem>({
       }) => {
         const toggleProps = getToggleButtonProps()
         const parsedSelectedItem = selectedItem === null ? null : parseItem(selectedItem)
-
         return (
           <div className="RampInputSelect--root">
             <label className="RampText--s RampText--hushed" {...getLabelProps()}>
@@ -59,7 +58,8 @@ export function InputSelect<TItem>({
             <div
               className="RampInputSelect--input"
               onClick={(event) => {
-                setDropdownPosition(getDropdownPosition(event.target))
+                // setDropdownPosition(getDropdownPosition(event.target))
+                //BUG1
                 toggleProps.onClick(event)
               }}
             >
@@ -71,7 +71,8 @@ export function InputSelect<TItem>({
                 "RampInputSelect--dropdown-container-opened": isOpen,
               })}
               {...getMenuProps()}
-              style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+              // style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+              //BUG1
             >
               {renderItems()}
             </div>
